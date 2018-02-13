@@ -2,10 +2,12 @@ package Project;
 
 public class MainClass {
 
-	final static int N = 10;
+	final static int N = 2;
+	final static int K = 8;
 	static char []initTable;
 	static char []endTable;
 	static int k;
+	
 	
 	static int DEBUG = 10;
 
@@ -176,7 +178,7 @@ public class MainClass {
 		return res+"\n)";
 	}
 	
-	public static String mutexFrog() {
+	public static String question3_4() {
 		String res = "!(";
 		
 		for(int i=0;i<2*N+1;i++) {
@@ -191,12 +193,39 @@ public class MainClass {
 		
 		return res;
 	}
+	
+	public static String question5() {
+		String res = "!(\n";
+		
+		for(int i=0;i<=k;i++) {
+			
+			for(int j=i+1;j<=k;j++) {
+				res+="(";
+				for(int m=0;m<2*N+1;m++) {
+					res+="("+toS("V",m,j)+" = "+toS("V",m,i)+") & ("+toS("R",m,j)+" = "+toS("R",m,i)+")";
+					if(m<2*N) {
+						res+=" & ";
+					}
+				}
+				res+=")";
+				if(i<k-1) {
+					res+="\n|\n";
+				}
+				
+			}
+			
+			
+		}
+		res+="\n)";
+		
+		return res;
+	}
 
 
-	public static void execute() {
+	public static int execute() {
 		printTableInBooleanForm(initTable);
 		
-		while(k<120) {
+		while(k<K) {
 			boolean writen = false;
 			System.out.println("\n&(\n");
 			for(int i=0;i<2*N+1;i++) {
@@ -257,15 +286,14 @@ public class MainClass {
 
 			}
 			
-			
-			System.out.println("\n)\n");
-			System.out.println("&\n");
-			System.out.println(mutexFrog()+"\n");
+			System.out.println("\n)\n&\n"+question3_4()+"\n");
 			k++;
 		}
+		System.out.println("\n&\n"+question5()+"\n");
 		System.out.println("\n&");
 		printTableInBooleanForm(endTable);
 		
+		return k;
 	}
 
 
