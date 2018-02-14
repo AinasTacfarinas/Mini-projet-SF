@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 public class MainClass {
 
@@ -14,36 +15,36 @@ public class MainClass {
 
 	static int DEBUG = 10;
 
-	
+
 	public static String toS(String s, int i, int j) {
 		return ""+s+"_"+i+"_"+j;
 	}
-	
+
 	public static String initState() {
 		String res = "";
 		int i=0;
 		for(i=0;i<N;i++) {
 			res+="("+toS("V",i,0)+" & "+ toS("!R",i,0)+") & ";
 		}
-		
+
 		res+="("+toS("!V",i,0)+" & "+ toS("!R",i,0)+")";
-		
+
 		for(int j=i+1;j<2*N+1;j++) {
 			res+=" & ("+toS("!V",j,0)+" & "+ toS("R",j,0)+")";
 		}
 		return res;
 	}
-	
-	
+
+
 	public static String finalState() {
 		String res = "";
 		int i=0;
 		for(i=0;i<N;i++) {
 			res+="("+toS("!V",i,k)+" & "+ toS("R",i,k)+") & ";
 		}
-		
+
 		res+="("+toS("!V",i,k)+" & "+ toS("!R",i,k)+") ";
-		
+
 		for(int j=i;j<2*N+1;j++) {
 			res+="("+toS("V",j,k)+" & "+ toS("!R",j,k)+") & ";
 		}
@@ -83,7 +84,7 @@ public class MainClass {
 		return res+="\n";
 	}
 
-	
+
 
 	public static String move1FromLeft(int j) {
 
@@ -233,6 +234,8 @@ public class MainClass {
 	}
 
 
+
+
 	public static int execute() throws Exception {
 
 		String booltocnb = "bool2cnf-20110304/a.out";
@@ -240,17 +243,169 @@ public class MainClass {
 		String file1 = "test.txt";
 		String file2 = "test.cnf";
 		String file3 = "test.out";
-		
+
 		String blast="";
 		while(!blast.equals("SATISFIABLE")) {
 			String res=initState();
 			k=0;
 			while(k<=K) {			
-			
-			boolean writen = false;
-			res+="\n&(\n";
-			
-			
+
+				boolean writen = false;
+				res+="\n&(\n";
+
+
+				for(int i=0;i<2*N+1;i++) {
+
+					if(i>0) {
+						if(writen) {
+							res+="\n|\n";
+						}else {
+							writen= true;
+						}
+						res+=move1FromRight(i);
+					}
+
+
+					if(i>1) {
+						if(writen) {
+							res+="\n|\n";
+						}else {
+							writen= true;
+						}
+						res+=move2FromRight(i);
+					}
+
+
+					if(i<2*N) {
+						if(writen) {
+							res+="\n|\n";
+						}else {
+							writen= true;
+						}
+						res+=move1FromLeft(i);
+					}
+
+					if(i<2*N-1) {
+						if(writen) {
+							res+="\n|\n";
+						}else {
+							writen= true;
+						}				
+						res+=move2FromLeft(i);
+					}
+
+				}
+				res+="\n)\n&\n"+question3_4()+"\n";
+				k++;
+
+			}
+			res+="\n&\n"+question5()+"\n\n\n&"+finalState();
+			File f;
+			FileOutputStream fos;
+			f = new File(file1);
+			fos = new FileOutputStream(f);
+			fos.write(res.getBytes());
+			K++;
+
+			Process p = new ProcessBuilder()
+					.command(booltocnb)
+					.redirectInput(new File(file1))
+					.redirectOutput(new File(file2))
+					.start();
+
+			boolean finished = p.waitFor(5, TimeUnit.SECONDS);
+			if (!finished) {
+				p.destroy();
+				finished=p.waitFor(5, TimeUnit.SECONDS); // wait for the process to terminate
+			}
+
+			Process p2 = new ProcessBuilder()
+					.command(minisat)
+					.redirectInput(new File(file2))
+					.redirectOutput(new File(file3))
+					.start();
+
+
+			boolean finished2 = p2.waitFor(5, TimeUnit.SECONDS);
+			if (!finished2) {
+				p2.destroy();
+				finished2=p.waitFor(5, TimeUnit.SECONDS); // wait for the process to terminate
+			}
+
+			BufferedReader bis = new BufferedReader(new FileReader(file3));
+
+
+			String last="";
+			last = bis.readLine();
+
+			while((last = bis.readLine())!=null) {
+				blast = last;
+			}
+
+			bis.close();
+		}
+
+		return K;
+	}
+
+
+
+	public static String formFromTable(char[] tab, boolean init) {
+		String res = "";
+
+		int step = init ? 0 : k;
+
+		for(int i=0;i<tab.length;i++) {
+			if(tab[i]=='V') {
+				res+="(V_"+i+"_"+step+") & (!R_"+i+"_"+step+")";
+			}else {
+				if(tab[i]=='R') {
+					res+="(!V_"+i+"_"+step+") & (R_"+i+"_"+step+")";
+				}else {
+					if(tab[i]=='X') {
+						res+="(!V_"+i+"_"+step+") & (!R_"+i+"_"+step+")";
+					}else {
+						System.err.println("question7 - Il faut que les valeurs soient 'V', 'R' ou 'X'");
+						System.exit(-1);
+					}
+
+				}
+			}
+
+			if(i<tab.length-1) {
+				res+= " & ";
+			}
+		}
+
+		return res;
+
+	}
+
+	public static int question7(char[] debut, char[] fin) throws Exception {
+
+		if(debut.length != fin.length) {
+			System.err.println("question7 - Les tableaux ont des tailles différentes");
+			System.exit(-1);
+		}
+
+		String booltocnb = "bool2cnf-20110304/a.out";
+		String minisat = "minisat/build/release/bin/minisat";
+		String file1 = "test.txt";
+		String file2 = "test.cnf";
+		String file3 = "test.out";
+
+		String blast="";
+		int cpt = 0;
+		int maj = (debut.length + 2)*debut.length;
+		while(!blast.equals("SATISFIABLE") && cpt<maj) {
+			String res=formFromTable(debut,true);
+			k=0;
+			while(k<=K) {			
+
+				boolean writen = false;
+				res+="\n&(\n";
+
+
 				for(int i=0;i<2*N+1;i++) {
 
 					if(i>0) {
@@ -308,10 +463,9 @@ public class MainClass {
 				}
 				res+="\n)\n&\n"+question3_4()+"\n";
 				k++;
-				
+
 			}
-			res+="\n&\n"+question5()+"\n\n\n&"+finalState();
-			System.out.println(res);
+			res+="\n&\n"+question5()+"\n\n\n&"+formFromTable(fin,false);;
 			File f;
 			FileOutputStream fos;
 			f = new File(file1);
@@ -351,23 +505,27 @@ public class MainClass {
 			last = bis.readLine();
 
 			while((last = bis.readLine())!=null) {
-				System.out.println(last);
 				blast = last;
 			}
 
-			System.out.println(K);
 			bis.close();
+			cpt++;
+		}
+		if(blast.equals("SATISFIABLE")) {
+			return K;
+		}else {
+			return -1;
 		}
 
-		return K;
 	}
 
 
 
-
 	public static void main(String[] args) throws Exception {
-		k=0;
 		System.out.println(execute());
+		char []debut = new char[] {'V','R','X','R','V'};
+		char []fin = new char[] {'V','V','X','R','R'};
+		System.out.println(question7(debut, fin));
 	}
 
 
