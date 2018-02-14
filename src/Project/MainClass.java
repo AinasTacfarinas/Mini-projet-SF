@@ -382,7 +382,7 @@ public class MainClass {
 	}
 
 	public static int question7(char[] debut, char[] fin) throws Exception {
-
+		
 		if(debut.length != fin.length) {
 			System.err.println("question7 - Les tableaux ont des tailles différentes");
 			System.exit(-1);
@@ -406,7 +406,7 @@ public class MainClass {
 				res+="\n&(\n";
 
 
-				for(int i=0;i<2*N+1;i++) {
+				for(int i=0;i<debut.length;i++) {
 
 					if(i>0) {
 						if(writen) {
@@ -436,7 +436,7 @@ public class MainClass {
 					}
 
 
-					if(i<2*N) {
+					if(i<debut.length-1) {
 						if(writen) {
 							res+="\n|\n";
 						}else {
@@ -448,7 +448,7 @@ public class MainClass {
 						res+=move1FromLeft(i);
 					}
 
-					if(i<2*N-1) {
+					if(i<debut.length-2) {
 						if(writen) {
 							res+="\n|\n";
 						}else {
@@ -522,9 +522,9 @@ public class MainClass {
 
 
 	public static void main(String[] args) throws Exception {
-		System.out.println(execute());
+		//System.out.println(execute());
 		char []debut = new char[] {'V','R','X','R','V'};
-		char []fin = new char[] {'V','V','X','R','R'};
+		char []fin = new char[] {'R','R','X','V','V'};
 		System.out.println(question7(debut, fin));
 	}
 
